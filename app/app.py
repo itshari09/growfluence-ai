@@ -4,6 +4,93 @@ import pandas as pd
 import os
 from textblob import TextBlob
 
+import time
+
+# SESSION STATE
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
+
+# INTRO SCREEN
+if not st.session_state.intro_done:
+    st.markdown("""
+    <style>
+    .intro {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        z-index: 9999;
+        animation: fadeOut 3s ease-in-out forwards;
+    }
+
+    .intro h1 {
+        color: white;
+        font-size: 50px;
+        animation: zoomIn 2s ease;
+    }
+
+    @keyframes zoomIn {
+        from {transform: scale(0.8); opacity: 0;}
+        to {transform: scale(1); opacity: 1;}
+    }
+
+    @keyframes fadeOut {
+        0% {opacity: 1;}
+        80% {opacity: 1;}
+        100% {opacity: 0; visibility: hidden;}
+    }
+    </style>
+
+    <div class="intro">
+        <h1>🚀 Growfluence AI</h1>
+    </div>
+    """, unsafe_allow_html=True)
+
+    time.sleep(3)
+    st.session_state.intro_done = True
+    st.rerun()
+
+st.markdown("""
+<style>
+html {
+    scroll-behavior: smooth;
+}
+
+.section {
+    padding: 60px;
+    text-align: center;
+    color: white;
+}
+
+.hero {
+    background: linear-gradient(135deg, #141e30, #243b55);
+    border-radius: 20px;
+    padding: 80px;
+    margin-bottom: 20px;
+    animation: fadeIn 1.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0; transform: translateY(20px);}
+    to {opacity: 1; transform: translateY(0);}
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="hero">
+    <h1>🔥 AI Influencer Growth Suite</h1>
+    <p>Predict your content performance before posting</p>
+</div>
+""", unsafe_allow_html=True)
+
+
 # -------------------------------
 # PAGE CONFIG
 # -------------------------------

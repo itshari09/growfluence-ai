@@ -1,5 +1,5 @@
-pandas==2.x.x
-scikit-learn==1.x.x
-streamlit==1.x.x
-joblib==1.x.x
-textblob==0.x.x
+streamlit
+pandas
+scikit-learn
+joblib
+textblob

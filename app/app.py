@@ -163,7 +163,7 @@ with st.sidebar:
     st.markdown("## ✳ Growfluence")
     st.caption("CREATOR GROWTH STUDIO")
     st.divider()
-    pages = ["Overview","Weekly planner","Content studio","My strategy","Analytics"]
+    pages = ["Overview","Social accounts","Weekly planner","Content studio","My strategy","Analytics"]
     selected = st.radio("WORKSPACE", pages, label_visibility="collapsed", key="navigation")
     st.divider()
     st.caption(f"Signed in as {st.session_state.auth.get('user',{}).get('email','creator')}")
@@ -363,6 +363,47 @@ try:
                 st.caption("Creative direction: "+g.get("creative_direction",""))
                 st.markdown('</div>',unsafe_allow_html=True)
                 st.download_button("Download content brief",json.dumps(g,indent=2),"growfluence-content-brief.json","application/json")
+    elif selected == "Social accounts":
+        page_header("YOUR SOCIAL PRESENCE","Social accounts","Add your profiles and track platform-specific performance.")
+        platform = st.selectbox("Platform", ["Instagram","YouTube","TikTok","Facebook","LinkedIn","X","Pinterest"])
+        rows = db_request("creator_social_accounts", params={"select":"*","platform":f"eq.{platform}","limit":"1"})
+        account = rows[0] if rows else {}
+        with st.form("social_account_form"):
+            profile_url = st.text_input("Public profile / channel URL", value=account.get("profile_url",""))
+            region = st.text_input("Your region", value=account.get("region",""), placeholder="e.g. Hyderabad, India")
+            followers = st.number_input("Followers / subscribers", min_value=0, step=1, value=int(account.get("followers") or 0))
+            following = st.number_input("Following (if applicable)", min_value=0, step=1, value=int(account.get("following") or 0))
+            st.markdown("**Average performance per recent post**")
+            avg_likes = st.number_input("Average likes", min_value=0.0, value=float(account.get("average_likes") or 0))
+            avg_comments = st.number_input("Average comments", min_value=0.0, value=float(account.get("average_comments") or 0))
+            avg_shares = st.number_input("Average shares", min_value=0.0, value=float(account.get("average_shares") or 0))
+            avg_views = st.number_input("Average views", min_value=0.0, value=float(account.get("average_views") or 0))
+            avg_saves = st.number_input("Average saves", min_value=0.0, value=float(account.get("average_saves") or 0))
+            save_account = st.form_submit_button("Save platform profile", use_container_width=True)
+        if save_account:
+            if not profile_url.strip().startswith(("https://","http://")):
+                st.error("Enter a valid profile URL.")
+            else:
+                payload = {"platform":platform,"profile_url":profile_url.strip(),"region":region.strip(),"followers":int(followers),"following":int(following),"average_likes":avg_likes,"average_comments":avg_comments,"average_shares":avg_shares,"average_views":avg_views,"average_saves":avg_saves}
+                if account:
+                    db_request("creator_social_accounts","PATCH",payload,{"id":"eq."+str(account["id"])})
+                else:
+                    db_request("creator_social_accounts","POST",payload)
+                st.success("Platform profile saved.")
+                st.rerun()
+        saved_accounts = db_request("creator_social_accounts", params={"select":"*","order":"updated_at.desc"})
+        for item in saved_accounts:
+            with st.container(border=True):
+                st.markdown("**"+item["platform"]+"** · ["+item["profile_url"]+"]("+item["profile_url"]+")")
+                cols = st.columns(4)
+                cols[0].metric("Followers / subs", f"{int(item.get('followers') or 0):,}")
+                cols[1].metric("Following", f"{int(item.get('following') or 0):,}")
+                cols[2].metric("Average likes", f"{float(item.get('average_likes') or 0):,.1f}")
+                cols[3].metric("Average views", f"{float(item.get('average_views') or 0):,.1f}")
+                st.caption("Region: "+str(item.get("region") or "Not set")+" · Average comments: "+str(item.get("average_comments") or 0)+" · Shares: "+str(item.get("average_shares") or 0)+" · Saves: "+str(item.get("average_saves") or 0))
+        if not saved_accounts:
+            st.info("No profiles saved yet. Add your first platform above.")
+        st.warning("Metrics are manually entered snapshots. Automatic syncing requires official platform API access and creator authorization.")
     elif selected == "Analytics":
         page_header("MEASURE WHAT MATTERS","Growth analytics","Track your progress with creator-reported metrics.")
         posts=get_posts()

@@ -191,7 +191,7 @@ try:
         page_header("PLAN WITH PURPOSE","Your weekly content plan","Build a balanced week of posts around your audience and goals.")
         if not creator or not creator.get("niche"):
             st.warning("Set up your creator strategy first.")
-            if st.button("Set up my strategy"): st.session_state.navigation = "My strategy"; st.rerun()
+            st.caption("Choose My strategy from the sidebar to get started.")
         else:
             if st.button("✳ Generate my 7-day plan", type="primary", use_container_width=True):
                 items, source = make_week(creator)
@@ -275,7 +275,7 @@ try:
         page_header("YOUR CREATOR COMMAND CENTRE","Good to see you again.","A simple view of what you're creating and where you're heading.")
         if not creator or not creator.get("niche"):
             st.markdown('<div class="panel"><h3>Start with your creator strategy</h3><p class="muted">Add your niche, audience and goals. Your weekly planner will use these details to create a focused plan.</p></div>',unsafe_allow_html=True)
-            if st.button("Set up my creator profile",type="primary"): st.session_state.navigation="My strategy"; st.rerun()
+            st.caption("Choose My strategy from the sidebar to get started.")
         else:
             st.markdown(f'<div class="hero"><div class="eyebrow">YOUR CREATOR SNAPSHOT</div><h1>{creator.get("display_name") or "Your creator brand"}</h1><p class="muted">{creator.get("niche")} · {creator.get("primary_goal")} · {", ".join(creator.get("platforms") or [])}</p></div>',unsafe_allow_html=True)
             posts=get_posts()
@@ -289,7 +289,7 @@ try:
             if this_week:
                 for p in this_week[:5]: st.markdown(f'<div class="panel"><span class="pill">{p.get("status","Idea")}</span> &nbsp; <b>{p.get("scheduled_for")}</b> · {p.get("platform")}<h3>{p.get("topic")}</h3><span class="muted">{p.get("format")}</span></div>',unsafe_allow_html=True)
             else: st.info("Your week is open. Head to Weekly planner to create your first content schedule.")
-            if st.button("Plan my week",type="primary"): st.session_state.navigation="Weekly planner"; st.rerun()
+            st.caption("Open Weekly planner from the sidebar to create or update your schedule.")
 except requests.RequestException as e:
     st.error(f"Could not reach the service. Check your Supabase URL and network connection. {e}")
 except Exception as e:

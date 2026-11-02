@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import html
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -84,7 +85,7 @@ def save_profile(data: dict):
     else:
         db_request("creator_profiles", "POST", data)
 
-def fallback_week(niche: str, audience: str, platforms: list[str], goal: str):
+def fallback_week(niche: str, audience: str, platforms: list[str], goal: str, count: int = 7):
     formats = ["Short-form video", "Carousel", "Story", "Educational post", "Behind-the-scenes", "Short-form video", "Community post"]
     angles = [
         f"The biggest mistake people make in {niche}", f"5 practical {niche} tips beginners can use",
@@ -96,17 +97,18 @@ def fallback_week(niche: str, audience: str, platforms: list[str], goal: str):
              "format":formats[i],"topic":angles[i],"hook":f"Stop scrolling if you want to improve your {niche}.",
              "caption":f"Let’s make {niche} easier. Here is one idea you can put into action today. Save this for later and tell me what you want to learn next.",
              "cta":"Save this post and share your experience in the comments.","hashtags":[f"#{niche.replace(' ','')}", "#creatorcommunity", "#learnandgrow"],
-             "objective":goal,"status":"Idea"} for i in range(7)]
+             "objective":goal,"status":"Idea"} for i in range(count)]
 
 def make_week(p: dict):
-    prompt = f"""Create a realistic 7-day content plan for a creator. Return JSON with key posts, an array of exactly 7 objects. Each object: day (YYYY-MM-DD), platform, format, topic, hook, caption, cta, hashtags (array of 3-6), objective, status (Idea). Use distinct ideas, a sensible mix of formats, platform-aware copy, and do not promise viral results. Start {date.today().isoformat()}."""
+    count = max(3, min(14, int(p.get('posts_per_week', 7))))
+    prompt = f"""Create a realistic {count}-post content plan for a creator. Return JSON with key posts, an array of exactly {count} objects. Each object: day (YYYY-MM-DD), platform, format, topic, hook, caption, cta, hashtags (array of 3-6), objective, status (Idea). Use distinct ideas, a sensible mix of formats, platform-aware copy, and do not promise viral results. Start {date.today().isoformat()}."""
     try:
         result = ai_json("You are a senior creator growth strategist. Return valid concise JSON only.", json.dumps({"creator_profile":p,"request":prompt}))
         posts = result.get("posts", [])
-        if len(posts) == 7: return posts, "AI-generated plan"
+        if len(posts) == count: return posts, "AI-generated plan"
     except Exception as e:
         st.warning(f"AI planner unavailable; using a practical starter plan. Details: {str(e)[:180]}")
-    return fallback_week(p.get("niche","your niche"), p.get("target_audience","your audience"), p.get("platforms",["Instagram"]), p.get("primary_goal","Engagement")), "Starter plan"
+    return fallback_week(p.get("niche","your niche"), p.get("target_audience","your audience"), p.get("platforms",["Instagram"]), p.get("primary_goal","Engagement"), count), "Starter plan"
 
 def get_posts():
     return db_request("content_posts", params={"select":"*","order":"scheduled_for.asc","limit":"100"})
@@ -193,7 +195,7 @@ try:
             st.warning("Set up your creator strategy first.")
             st.caption("Choose My strategy from the sidebar to get started.")
         else:
-            if st.button("✳ Generate my 7-day plan", type="primary", use_container_width=True):
+            if st.button(f"✳ Generate my {int(creator.get('posts_per_week', 7))}-post plan", type="primary", use_container_width=True):
                 items, source = make_week(creator)
                 records = [{"scheduled_for":x.get("day",date.today().isoformat()),"platform":x.get("platform","Instagram"),"format":x.get("format","Post"),"topic":x.get("topic",""),"hook":x.get("hook",""),"caption":x.get("caption",""),"cta":x.get("cta",""),"hashtags":x.get("hashtags",[]),"objective":x.get("objective",creator.get("primary_goal","Grow audience")),"status":"Idea"} for x in items]
                 db_request("content_posts","POST",records)
@@ -277,7 +279,11 @@ try:
             st.markdown('<div class="panel"><h3>Start with your creator strategy</h3><p class="muted">Add your niche, audience and goals. Your weekly planner will use these details to create a focused plan.</p></div>',unsafe_allow_html=True)
             st.caption("Choose My strategy from the sidebar to get started.")
         else:
-            st.markdown(f'<div class="hero"><div class="eyebrow">YOUR CREATOR SNAPSHOT</div><h1>{creator.get("display_name") or "Your creator brand"}</h1><p class="muted">{creator.get("niche")} · {creator.get("primary_goal")} · {", ".join(creator.get("platforms") or [])}</p></div>',unsafe_allow_html=True)
+            safe_name = html.escape(str(creator.get('display_name') or 'Your creator brand'))
+            safe_niche = html.escape(str(creator.get('niche') or ''))
+            safe_goal = html.escape(str(creator.get('primary_goal') or ''))
+            safe_platforms = html.escape(', '.join(creator.get('platforms') or []))
+            st.markdown(f'<div class="hero"><div class="eyebrow">YOUR CREATOR SNAPSHOT</div><h1>{safe_name}</h1><p class="muted">{safe_niche} · {safe_goal} · {safe_platforms}</p></div>',unsafe_allow_html=True)
             posts=get_posts()
             week_start=date.today().isoformat()
             week_end=(date.today()+timedelta(days=6)).isoformat()
@@ -287,7 +293,13 @@ try:
                 col.markdown(f'<div class="metric"><div class="metric-label">{label}</div><div class="metric-value">{value}</div></div>',unsafe_allow_html=True)
             st.subheader("This week's focus")
             if this_week:
-                for p in this_week[:5]: st.markdown(f'<div class="panel"><span class="pill">{p.get("status","Idea")}</span> &nbsp; <b>{p.get("scheduled_for")}</b> · {p.get("platform")}<h3>{p.get("topic")}</h3><span class="muted">{p.get("format")}</span></div>',unsafe_allow_html=True)
+                for p in this_week[:5]:
+                    safe_status = html.escape(str(p.get('status', 'Idea')))
+                    safe_date = html.escape(str(p.get('scheduled_for', '')))
+                    safe_platform = html.escape(str(p.get('platform', '')))
+                    safe_topic = html.escape(str(p.get('topic', '')))
+                    safe_format = html.escape(str(p.get('format', '')))
+                    st.markdown(f'<div class="panel"><span class="pill">{safe_status}</span> &nbsp; <b>{safe_date}</b> · {safe_platform}<h3>{safe_topic}</h3><span class="muted">{safe_format}</span></div>',unsafe_allow_html=True)
             else: st.info("Your week is open. Head to Weekly planner to create your first content schedule.")
             st.caption("Open Weekly planner from the sidebar to create or update your schedule.")
 except requests.RequestException as e:

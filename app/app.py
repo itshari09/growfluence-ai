@@ -451,6 +451,24 @@ try:
             a,b,c,d=st.columns(4)
             for col,label,value in [(a,"Planned this week",len(this_week)),(b,"Ready to publish",sum(p.get("status")=="Ready" for p in posts)),(c,"Published",sum(p.get("status")=="Published" for p in posts)),(d,"Platforms",len(creator.get("platforms") or []))]:
                 col.markdown(f'<div class="metric"><div class="metric-label">{label}</div><div class="metric-value">{value}</div></div>',unsafe_allow_html=True)
+            st.subheader("Your growth coach")
+            beginner_mode = st.toggle("I am new to content creation", value=True, key="beginner_mode")
+            if beginner_mode:
+                st.markdown('<div class="panel"><b>Start with a learning loop</b><p class="muted">Choose 3 creators in your niche. Study their hooks, video structure, pacing and storytelling. Recreate the format with your own script, footage and point of view. Do not repost their video or copy their exact script.</p><p class="muted">Publish consistently, then note views, watch time, likes, comments, shares and saves. Repeat formats that genuinely help your audience.</p></div>', unsafe_allow_html=True)
+            else:
+                st.info("Growth routine: identify your best-performing posts, repeat successful formats with fresh ideas, test one new format each week, and compare performance.")
+            social_accounts = db_request("creator_social_accounts", params={"select":"*","order":"updated_at.desc"})
+            if social_accounts:
+                region = next((x.get("region") for x in social_accounts if x.get("region")), "Not set")
+                st.caption("Regional trend focus: "+str(region)+". Check the platform's in-app trend and audio library for sounds currently available in your region.")
+                st.subheader("Your platform snapshot")
+                for account in social_accounts:
+                    st.write("**"+account["platform"]+"** · "+f"{int(account.get('followers') or 0):,}"+" followers/subscribers · "+f"{float(account.get('average_likes') or 0):,.0f}"+" average likes · "+f"{float(account.get('average_views') or 0):,.0f}"+" average views")
+            else:
+                st.info("Add your social profile URLs and metrics in Social accounts to personalize your growth recommendations.")
+            if st.button("Manage social accounts"):
+                st.session_state.navigation = "Social accounts"
+                st.rerun()
             st.subheader("This week's focus")
             if this_week:
                 for p in this_week[:5]:

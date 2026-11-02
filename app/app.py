@@ -94,7 +94,7 @@ def fallback_week(niche: str, audience: str, platforms: list[str], goal: str, co
         f"Share a lesson and invite your community to respond"
     ]
     return [{"day":(date.today()+timedelta(days=i)).isoformat(),"platform":platforms[i % len(platforms)] if platforms else "Instagram",
-             "format":formats[i],"topic":angles[i],"hook":f"Stop scrolling if you want to improve your {niche}.",
+             "format":formats[i % len(formats)],"topic":angles[i % len(angles)],"hook":f"Stop scrolling if you want to improve your {niche}.",
              "caption":f"Let’s make {niche} easier. Here is one idea you can put into action today. Save this for later and tell me what you want to learn next.",
              "cta":"Save this post and share your experience in the comments.","hashtags":[f"#{niche.replace(' ','')}", "#creatorcommunity", "#learnandgrow"],
              "objective":goal,"status":"Idea"} for i in range(count)]
@@ -210,7 +210,10 @@ try:
                     st.write(" ".join(item.get("hashtags") or []))
                     col1,col2=st.columns([2,1])
                     with col1:
-                        new_status=st.selectbox("Status",["Idea","Draft","Ready","Published"],index=["Idea","Draft","Ready","Published"].index(item.get("status","Idea")),key=f"status_{item['id']}")
+                        status_options=["Idea","Draft","Ready","Published"]
+                    current_status=item.get("status","Idea")
+                    status_index=status_options.index(current_status) if current_status in status_options else 0
+                    new_status=st.selectbox("Status",status_options,index=status_index,key=f"status_{item['id']}")
                     with col2:
                         if st.button("Save status",key=f"save_{item['id']}"):
                             db_request("content_posts","PATCH",{"status":new_status},{"id":f"eq.{item['id']}"})
@@ -224,6 +227,9 @@ try:
             fmt=st.selectbox("Format",["Instagram Reel","Carousel","YouTube Short","YouTube video","LinkedIn post","Story","X thread"])
             tone=st.selectbox("Tone",["Friendly and helpful","Bold and opinionated","Educational","Personal storytelling","Professional"])
             if st.button("Generate content",type="primary"):
+                if not topic.strip():
+                    st.warning("Add a topic before generating content.")
+                    st.stop()
                 prompt={"niche":creator.get("niche"),"audience":creator.get("target_audience"),"brand_voice":tone,"platform":platform,"format":fmt,"topic":topic}
                 try:
                     result=ai_json("You are an expert social content editor. Return JSON with keys hook, caption, script, cta, hashtags (array), creative_direction. Keep it specific, useful, natural and platform-appropriate.",json.dumps(prompt))

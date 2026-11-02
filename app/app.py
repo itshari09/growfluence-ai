@@ -77,6 +77,7 @@ def profile():
     return rows[0] if rows else None
 
 def save_profile(data: dict):
+    data = {**data, "user_id": st.session_state.auth.get("user", {}).get("id")}
     existing = profile()
     if existing:
         db_request("creator_profiles", "PATCH", data, {"id":f"eq.{existing['id']}"})

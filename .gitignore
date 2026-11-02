@@ -205,3 +205,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Growfluence secrets and Streamlit local config
+.env
+.streamlit/secrets.toml
